@@ -14,8 +14,15 @@
         <PackageProjectUrl>https://github.com/oising/OrleansContrib.ActivationShedding</PackageProjectUrl>
         <RepositoryUrl>https://github.com/oising/OrleansContrib.ActivationShedding</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+    </PropertyGroup>
+    
     <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2021.2.0" />
       <PackageReference Include="Microsoft.ApplicationInsights" Version="2.18.0" />
