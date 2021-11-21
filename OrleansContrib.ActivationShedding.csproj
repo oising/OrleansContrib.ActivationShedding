@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
         <RootNamespace>Hilo.Sys.Orleans.GrainActivationBalancing</RootNamespace>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -11,6 +10,10 @@
         <Title>Microsoft Orleans Grain Shedding Extension</Title>
         <Authors>Oisin Grehan</Authors>
         <Description>Allows rebalancing of grain activations across a cluster. Useful during rolling upgrades where placement can be very unbalanced at the end of the deployment.</Description>
+        <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
+        <PackageProjectUrl>https://github.com/oising/OrleansContrib.ActivationShedding</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/oising/OrleansContrib.ActivationShedding</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>

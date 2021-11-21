@@ -28,7 +28,7 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
         private int _surplusActivations;
         private bool _isRebalancing;
 
-        private readonly SemaphoreSlim _lock = new (1, 1);
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
         public ActivationSheddingFilter(
             ILogger<ActivationSheddingFilter> logger,
@@ -58,7 +58,7 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
         public async Task Invoke(IIncomingGrainCallContext context)
         {
             if (_surplusActivations > 0 &&
-                context.Grain is not SystemTarget &&
+                (!(context.Grain is SystemTarget)) &&
                 context.Grain is Grain grain &&
                 _eligibilityCheck.CanDeactivate(grain))
             {
@@ -122,7 +122,7 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
             try
             {
                 // only work with two or more silos
-                if (_activeSilos is { Count: > 1 })
+                if (_activeSilos?.Count > 1 )
                 {
                     var activeSilos = _activeSilos.ToArray();
                     var stats = await _managementGrain.GetRuntimeStatistics(activeSilos);
