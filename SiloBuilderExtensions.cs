@@ -1,6 +1,6 @@
 ﻿using System;
-using Hilo.Sys.Orleans.GrainActivationBalancing;
 using Microsoft.Extensions.DependencyInjection;
+using OrleansContrib.ActivationShedding;
 
 // ReSharper disable once CheckNamespace
 namespace Orleans.Hosting

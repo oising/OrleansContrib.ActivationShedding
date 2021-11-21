@@ -1,6 +1,6 @@
 ﻿using Orleans;
 
-namespace Hilo.Sys.Orleans.GrainActivationBalancing
+namespace OrleansContrib.ActivationShedding
 {
     /// <summary>
     /// Defines an implementation that will decide which grains are eligible to be deactivated on a silo that is rebalancing activations.

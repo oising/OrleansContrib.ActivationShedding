@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Hilo.Sys.Orleans.GrainActivationBalancing
+namespace OrleansContrib.ActivationShedding
 {
     internal static class TaskUtility
     {

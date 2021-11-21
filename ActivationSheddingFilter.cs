@@ -4,18 +4,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Runtime;
 
-namespace Hilo.Sys.Orleans.GrainActivationBalancing
+namespace OrleansContrib.ActivationShedding
 {
     [UsedImplicitly]
     public sealed class ActivationSheddingFilter : IIncomingGrainCallFilter, IDisposable
     {
-        private readonly TelemetryClient _telemetryClient;
         private readonly IGrainRuntime _runtime;
         private readonly IClusterMembershipService _clusterMembershipService;
         private readonly IGrainDeactivationEligibilityCheck _eligibilityCheck;
@@ -30,18 +28,20 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
 
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
+        private static EventId _startEvent = new EventId(58001, "Starting");
+        private static EventId _rebalanceEvent = new EventId(58002, "Rebalancing");
+        private static EventId _stopEvent = new EventId(58003, "Stopping");
+        
         public ActivationSheddingFilter(
             ILogger<ActivationSheddingFilter> logger,
-            TelemetryClient telemetryClient,
+            IOptions<ActivationSheddingOptions> digitalTwinOptions,
             IGrainFactory grainFactory,
             IGrainRuntime runtime,
             ILocalSiloDetails localSiloDetails,
             IClusterMembershipService clusterMembershipService,
-            IGrainDeactivationEligibilityCheck eligibilityCheck,
-            IOptions<ActivationSheddingOptions> digitalTwinOptions)
+            IGrainDeactivationEligibilityCheck eligibilityCheck)
         {
             _options = digitalTwinOptions.Value;
-            _telemetryClient = telemetryClient;
             _runtime = runtime;
             _clusterMembershipService = clusterMembershipService;
             _eligibilityCheck = eligibilityCheck;
@@ -186,7 +186,11 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
                                 {
                                     _isRebalancing = true;
                                     UpdateCullingData();
-                                    EmitRebalancingEvent(totalActivations, myActivations, overagePercent, overagePercentTrigger, "starting");
+                                    EmitRebalancingEvent(totalActivations,
+                                        myActivations,
+                                        overagePercent,
+                                        overagePercentTrigger,
+                                        _startEvent);
                                 }
                                 else
                                 {
@@ -196,16 +200,17 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
                             else
                             {
                                 // we're over target but under threshold - if already rebalancing, then stop if no more surplus activations
-                                if (_isRebalancing)
+                                if (_isRebalancing && _surplusActivations <= 0)
                                 {
                                     // this may be less than zero due to timing (We don't lock in invoke, perf)
-                                    if (_surplusActivations <= 0)
-                                    {
-                                        Interlocked.Exchange(ref _surplusActivations, 0);
-                                        _isRebalancing = false;
+                                    Interlocked.Exchange(ref _surplusActivations, 0);
+                                    _isRebalancing = false;
             
-                                        EmitRebalancingEvent(totalActivations, myActivations, overagePercent, overagePercentTrigger, "stopping");
-                                    }
+                                    EmitRebalancingEvent(totalActivations,
+                                        myActivations,
+                                        overagePercent,
+                                        overagePercentTrigger,
+                                        _stopEvent);
                                 }
                             }
                         }
@@ -217,13 +222,22 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
                                 Interlocked.Exchange(ref _surplusActivations, 0);
                                 _isRebalancing = false;
             
-                                EmitRebalancingEvent(totalActivations, myActivations, overagePercent, overagePercentTrigger, "stopping");
+                                EmitRebalancingEvent(totalActivations,
+                                    myActivations,
+                                    overagePercent,
+                                    overagePercentTrigger,
+                                    _stopEvent);
                             }
                         }
                         
                         // dump stats for this interval
-                        EmitRebalancingEvent(totalActivations, myActivations, overagePercent, overagePercentTrigger,
-                            _isRebalancing ? "rebalancing": "stopped");
+                        EmitRebalancingEvent(totalActivations,
+                            myActivations,
+                            overagePercent,
+                            overagePercentTrigger,
+                            _isRebalancing
+                                ? _rebalanceEvent
+                                : _stopEvent);
                     }
                 }
             }
@@ -237,20 +251,21 @@ namespace Hilo.Sys.Orleans.GrainActivationBalancing
             int myActivations,
             double overagePercent,
             double overagePercentTrigger,
-            string phase)
+            EventId phase)
         {
-            _telemetryClient.TrackEvent("SiloActivationShedding",
-                new Dictionary<string, string>()
-                {
-                    { "orleans.silo.rebalancingPhase", phase}, // started -> rebalancing -> stopped
-                    { "orleans.silo", $"{_currentSilo.ToLongString()}" },
-                    { "orleans.cluster.siloCount", _activeSilos.Count.ToString()},
-                    { "orleans.cluster.totalActivations", totalActivations.ToString() },
-                    { "orleans.silo.activations", myActivations.ToString() },
-                    { "orleans.silo.activationsToCull", _surplusActivations.ToString()},
-                    { "orleans.silo.overagePercent", $"{overagePercent}%" },
-                    { "orleans.silo.overageThresholdPercent", $"{overagePercentTrigger}%" }
-                });
+            var customDimensions = new Dictionary<string, string>()
+            {
+                { "orleans.silo.rebalancingPhase", phase.Name}, // started -> rebalancing -> stopped
+                { "orleans.silo", $"{_currentSilo.ToLongString()}" },
+                { "orleans.cluster.siloCount", _activeSilos.Count.ToString() },
+                { "orleans.cluster.totalActivations", totalActivations.ToString() },
+                { "orleans.silo.activations", myActivations.ToString() },
+                { "orleans.silo.activationsToCull", _surplusActivations.ToString() },
+                { "orleans.silo.overagePercent", $"{overagePercent}%" },
+                { "orleans.silo.overageThresholdPercent", $"{overagePercentTrigger}%" }
+            };
+            
+            _logger.LogInformation(phase, "Activation Shedding {@CustomDimensions}", customDimensions);
         }
 
         /// <inheritdoc />

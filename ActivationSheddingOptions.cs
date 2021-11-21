@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Hilo.Sys.Orleans.GrainActivationBalancing
+namespace OrleansContrib.ActivationShedding
 {
     /// <summary>
     /// Options to configure the grain activation shedding feature.
