@@ -3,12 +3,12 @@
 namespace OrleansContrib.ActivationShedding
 {
     /// <summary>
-    /// Defines an implementation that will decide which grains are eligible to be deactivated on a silo that is rebalancing activations.
+    /// Defines an implementation that will decide which grains are eligible to be deactivated on a silo that is shedding activations.
     /// </summary>
     public interface IGrainDeactivationEligibilityCheck
     {
         /// <summary>
-        /// Called to decide if a grain is eligible to be deactivated on a silo that is rebalancing activations.
+        /// Called to decide if a grain is eligible to be deactivated on a silo that is shedding activations.
         /// Typically one might decide to filter on the grain's Type namespace, e.g. Foobar.Grains.*
         /// </summary>
         /// <param name="grain">The contextual grain to check</param>

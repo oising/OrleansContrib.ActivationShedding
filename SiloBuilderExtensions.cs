@@ -1,10 +1,12 @@
 ﻿using System;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using OrleansContrib.ActivationShedding;
 
 // ReSharper disable once CheckNamespace
 namespace Orleans.Hosting
 {
+    [UsedImplicitly]
     public static class SiloBuilderExtensions
     {
         /// <summary>

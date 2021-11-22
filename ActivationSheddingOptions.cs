@@ -23,7 +23,7 @@ namespace OrleansContrib.ActivationShedding
         public int BaselineTriggerPercentage { get; set; } = 20;
 
         /// <summary>
-        /// How close we should get to the target value of activations before considering stopping the rebalancing process.
+        /// How close we should get to the target value of activations before considering stopping the shedding process.
         /// <remarks>The default is 95%</remarks> 
         /// </summary>
         [Range(0.1, 1)]

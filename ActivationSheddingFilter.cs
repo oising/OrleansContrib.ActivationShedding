@@ -28,9 +28,9 @@ namespace OrleansContrib.ActivationShedding
 
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
-        private static EventId _startEvent = new EventId(58001, "Starting");
-        private static EventId _rebalanceEvent = new EventId(58002, "Rebalancing");
-        private static EventId _stopEvent = new EventId(58003, "Stopping");
+        private static readonly EventId StartEvent = new EventId(58001, "Starting");
+        private static readonly EventId SheddingEvent = new EventId(58002, "Shedding");
+        private static readonly EventId StopEvent = new EventId(58003, "Stopping");
         
         public ActivationSheddingFilter(
             ILogger<ActivationSheddingFilter> logger,
@@ -41,11 +41,11 @@ namespace OrleansContrib.ActivationShedding
             IClusterMembershipService clusterMembershipService,
             IGrainDeactivationEligibilityCheck eligibilityCheck)
         {
+            _logger = logger;
             _options = digitalTwinOptions.Value;
             _runtime = runtime;
             _clusterMembershipService = clusterMembershipService;
             _eligibilityCheck = eligibilityCheck;
-            _logger = logger;
             _currentSilo = localSiloDetails.SiloAddress;
             _managementGrain = grainFactory.GetGrain<IManagementGrain>(0);
             _cts = new CancellationTokenSource();
@@ -130,7 +130,7 @@ namespace OrleansContrib.ActivationShedding
                     int totalActivations = 0;
                     int myActivations = 0;
 
-                    // compute total activations for overall threshold 
+                    // compute total activations for overall threshold, and snag this silo's specifically
                     for (int index = 0; index < _activeSilos.Count; index++)
                     {
                         var stat = stats[index];
@@ -190,7 +190,7 @@ namespace OrleansContrib.ActivationShedding
                                         myActivations,
                                         overagePercent,
                                         overagePercentTrigger,
-                                        _startEvent);
+                                        StartEvent);
                                 }
                                 else
                                 {
@@ -210,7 +210,7 @@ namespace OrleansContrib.ActivationShedding
                                         myActivations,
                                         overagePercent,
                                         overagePercentTrigger,
-                                        _stopEvent);
+                                        StopEvent);
                                 }
                             }
                         }
@@ -226,7 +226,7 @@ namespace OrleansContrib.ActivationShedding
                                     myActivations,
                                     overagePercent,
                                     overagePercentTrigger,
-                                    _stopEvent);
+                                    StopEvent);
                             }
                         }
                         
@@ -236,8 +236,8 @@ namespace OrleansContrib.ActivationShedding
                             overagePercent,
                             overagePercentTrigger,
                             _isRebalancing
-                                ? _rebalanceEvent
-                                : _stopEvent);
+                                ? SheddingEvent
+                                : StopEvent);
                     }
                 }
             }
@@ -265,7 +265,7 @@ namespace OrleansContrib.ActivationShedding
                 { "orleans.silo.overageThresholdPercent", $"{overagePercentTrigger}%" }
             };
             
-            _logger.LogInformation(phase, "Activation Shedding {@CustomDimensions}", customDimensions);
+            _logger.LogInformation(phase, "Silo Activation Shedding {@CustomDimensions}", customDimensions);
         }
 
         /// <inheritdoc />
