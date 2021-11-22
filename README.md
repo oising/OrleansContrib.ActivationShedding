@@ -85,7 +85,7 @@ To use the default configuration, call `UseActivationShedding()` on your `SiloBu
 
 ### Metrics and Logging
 
-Internally I was logging CustomEvent data directly to an App Insights Telemetry Client, but for this public release I've reverted to using the standard ILogging infra from Microsoft. That said, you will need to use [Serilog](https://github.com/serilog/serilog-extensions-logging) to correctly destructure the metrics object into a structured format in your chosen target logging system (e.g. Seq, ZipKind, Azure Monitor etc.)
+Internally I was logging CustomEvent data directly to an App Insights Telemetry Client, but for this public release I've reverted to using the standard ILogging infra from Microsoft. That said, you will need to use [Serilog](https://github.com/serilog/serilog-extensions-logging) to correctly destructure the metrics object into a structured format in your chosen target logging system (e.g. Seq, ZipKin, Azure Monitor etc.)
 
 ```c#
 var customDimensions = new Dictionary<string, string>()
@@ -102,4 +102,3 @@ var customDimensions = new Dictionary<string, string>()
 
 _logger.LogInformation(phase, "Silo Activation Shedding {@CustomDimensions}", customDimensions);
 ```
-
