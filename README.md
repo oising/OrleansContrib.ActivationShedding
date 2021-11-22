@@ -59,6 +59,8 @@ Assuming a cluster with two silos (we autodetect the number of actual silos, and
 
 Taking the two silo example with the default configuration, if we find that one silo has more than 20% over the desired "target" percentage of 50% (i.e. 100% / 2 silos = 50%), i.e. it has 70% of the share, then the silo with the greater share of activations will start "shedding" them. In practice, an incoming [Grain Call Filter](https://dotnet.github.io/orleans/docs/grains/interceptors.html) will deactivate the grain after it is called. **This means that grains are only shed from the silo if they are called at least once during rebalancing period.** 
 
+The shedding process for a silo will stop once it gets within the 95% threshold (`LowerRecoveryThresholdFactor`) of the target percentage. 
+
 ### How to use this feature
 
 Ideally you should be familiar with [Orleans Load Balancing](https://dotnet.github.io/orleans/docs/implementation/load_balancing.html), in particular the **ActivationCountBasedPlacement** strategy. This is employed by applying an attribute to grain types that you wish to be placed according to the number of activations on target silos. When a grain is shed from a silo, you would ideally want the cluster to next activate the grain on a less loaded silo that it was originally on. 
@@ -100,3 +102,4 @@ var customDimensions = new Dictionary<string, string>()
 
 _logger.LogInformation(phase, "Silo Activation Shedding {@CustomDimensions}", customDimensions);
 ```
+
