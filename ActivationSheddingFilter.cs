@@ -62,7 +62,7 @@ namespace OrleansContrib.ActivationShedding
                 context.Grain is Grain grain &&
                 _eligibilityCheck.CanDeactivate(grain))
             {
-                Interlocked.Decrement(ref _surplusActivations);
+                _ = Interlocked.Decrement(ref _surplusActivations);
 
                 // allow allow placement strategy to relocate grain
                 _runtime.DeactivateOnIdle(grain);
@@ -78,7 +78,7 @@ namespace OrleansContrib.ActivationShedding
             
             var interval = TimeSpan.FromSeconds(_options.TimerIntervalSeconds);
 
-            TaskUtility.RepeatEvery(UpdateStats, interval, _cts.Token, _logger).Ignore();
+            TaskUtility.RepeatEvery(UpdateStatistics, interval, _cts.Token, _logger).Ignore();
         }
 
         private async Task MonitorClusterChanges()
@@ -111,11 +111,11 @@ namespace OrleansContrib.ActivationShedding
                 }
 
                 // immediately update stats
-                await UpdateStats();
+                await UpdateStatistics();
             }
         }
         
-        private async Task UpdateStats()
+        private async Task UpdateStatistics()
         {
             await _lock.WaitAsync();
 
@@ -129,7 +129,49 @@ namespace OrleansContrib.ActivationShedding
 
                     int totalActivations = 0;
                     int myActivations = 0;
+                    double myPercentage;
+                    double targetPercentage;
+                    double overagePercentTrigger;
+                    double overagePercent;
+                    
+                    // compute the cluster grain activation ratios
+                    void ComputeRatios()
+                    {
+                        // e.g. if I have 1200 of 5000 activations, I own 24%
+                        myPercentage = Math.Floor(((double)myActivations / totalActivations) * 100);
 
+                        // e.g. for three silos, 33% - the average each should aim to have
+                        targetPercentage = Math.Floor(100d / activeSilos.Length);
+
+                        // e.g. 20% overage = 33% (1/3) + 20% = 53% would be the trigger
+                        overagePercentTrigger = _options.BaselineTriggerPercentage;
+
+                        // scale overagePercent by silo count, if > 2
+                        // this goes something like: 2:20, 3:16, 4:12, 5:8, 6:4, n:2 for siloCount:percentOverage
+                        if (_activeSilos.Count > 2)
+                        {
+                            overagePercentTrigger = (overagePercentTrigger * (1 + ((2 - _activeSilos.Count) * 0.2)));
+                            if (overagePercentTrigger < 2)
+                            {
+                                overagePercentTrigger = 2;
+                            }
+                        }
+
+                        overagePercent = Math.Floor(myPercentage - targetPercentage);
+                    }
+
+                    // figure out how many grains we should cull / shed
+                    void UpdateCullingData()
+                    {
+                        double averageActivationsPerSilo = Math.Floor((double)totalActivations / activeSilos.Length);
+
+                        // update counter (i.e. we set the "recovery" point at 95% of the overage activations beyond target)
+                        int surplusActivations =
+                            (int)Math.Floor((myActivations - averageActivationsPerSilo) * _options.LowerRecoveryThresholdFactor);
+                        
+                        _ = Interlocked.Exchange(ref _surplusActivations, surplusActivations);
+                    }
+                    
                     // compute total activations for overall threshold, and snag this silo's specifically
                     for (int index = 0; index < _activeSilos.Count; index++)
                     {
@@ -144,48 +186,21 @@ namespace OrleansContrib.ActivationShedding
                     // validate against an absolute threshold for cluster-level activations
                     if (totalActivations > _options.TotalGrainActivationsMinimumThreshold)
                     {
-                        // e.g. if I have 1200 of 5000 activations, I own 24%
-                        double myPercentage = Math.Floor(((double)myActivations / totalActivations) * 100);
+                        ComputeRatios();
                         
-                        // e.g. for three silos, 33% - the average each should aim to have
-                        double targetPercentage = Math.Floor(100d / activeSilos.Length);
-
-                        // e.g. 20% overage = 33% (1/3) + 20% = 53% would be the trigger
-                        double overagePercentTrigger = _options.BaselineTriggerPercentage;
-                        
-                        // scale overagePercent by silo count, if > 2
-                        // this goes something like: 2:20, 3:16, 4:12, 5:8, 6:4, n:2 for siloCount:percentOverage
-                        if (_activeSilos.Count > 2)
-                        {
-                            overagePercentTrigger = (overagePercentTrigger * (1 + ((2 - _activeSilos.Count) * 0.2)));
-                            if (overagePercentTrigger < 2)
-                            {
-                                overagePercentTrigger = 2;
-                            }
-                        }
-                        
-                        var overagePercent = Math.Floor(myPercentage - targetPercentage);
-                        
-                        void UpdateCullingData()
-                        {
-                            double averageActivationsPerSilo = Math.Floor((double)totalActivations / activeSilos.Length);
-
-                            // update counter (e.g. we set the "recovery" point at 95% of the overage activations beyond target)
-                            _surplusActivations =
-                                (int)Math.Floor((myActivations - averageActivationsPerSilo) * _options.LowerRecoveryThresholdFactor);
-                        }
-
                         // am I above the average expected?  (e.g. > 33% for 3 silos)
                         if (myPercentage > targetPercentage)
                         {
-                            // by how much? if more than the trigger
+                            // by how much? are we over by more than the overage trigger?
                             if (overagePercent >= overagePercentTrigger)
                             {
                                 // only emit event if not already rebalancing
                                 if (!_isRebalancing)
                                 {
                                     _isRebalancing = true;
+                                    
                                     UpdateCullingData();
+                                    
                                     EmitRebalancingEvent(totalActivations,
                                         myActivations,
                                         overagePercent,
@@ -255,7 +270,7 @@ namespace OrleansContrib.ActivationShedding
         {
             var customDimensions = new Dictionary<string, string>()
             {
-                { "orleans.silo.rebalancingPhase", phase.Name}, // started -> rebalancing -> stopped
+                { "orleans.silo.rebalancingPhase", phase.Name}, // started -> shedding -> stopped
                 { "orleans.silo", $"{_currentSilo.ToLongString()}" },
                 { "orleans.cluster.siloCount", _activeSilos.Count.ToString() },
                 { "orleans.cluster.totalActivations", totalActivations.ToString() },
