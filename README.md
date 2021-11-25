@@ -92,7 +92,7 @@ Internally I was logging CustomEvent data directly to an App Insights Telemetry 
 ```c#
 var customDimensions = new Dictionary<string, string>()
 {
-    { "orleans.silo.rebalancingPhase", phase.Name}, // started -> rebalancing -> stopped
+    { "orleans.silo.rebalancingPhase", phase.Name}, // started -> shedding -> stopped
     { "orleans.silo", $"{_currentSilo.ToLongString()}" },
     { "orleans.cluster.siloCount", _activeSilos.Count.ToString() },
     { "orleans.cluster.totalActivations", totalActivations.ToString() },
