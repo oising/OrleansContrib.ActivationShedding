@@ -2,7 +2,9 @@
 
 2021-11-24 / Version: 0.5-beta
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=oising_OrleansContrib.ActivationShedding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=oising_OrleansContrib.ActivationShedding)
+|CI Build|SonarCloud|
+|---|---|
+|[![Build](https://github.com/oising/OrleansContrib.ActivationShedding/actions/workflows/build.yml/badge.svg)](https://github.com/oising/OrleansContrib.ActivationShedding/actions/workflows/build.yml)|[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=oising_OrleansContrib.ActivationShedding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=oising_OrleansContrib.ActivationShedding)|
 
 The purpose of this library is to help in scenarios where the number of silos in your cluster changes at runtime, either through dynamic scaling for load (e.g. K8S, Azure VMSS or other cloud equivalents) or during a rolling upgrade whereby silos are brought up and down one at a time to deploy new builds, or whatever your strategy might be. This can lead to a situation where the activations on your cluster may be distributed unevenly, causing one or more silos to be overloaded while others lay mostly unused. This situation is particularly prevalent when using Orleans Virtual Streams, as selectively controlling the ingress of requests during an upgrade is useless here as the Virtual Stream infrastructure is a "pull" model, so the moment a silo comes up, it will start activating grains. 
 
