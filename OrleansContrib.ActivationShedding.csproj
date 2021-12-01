@@ -6,7 +6,7 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageTags>orleans microsoftorleans</PackageTags>
         <PackageId>Nivot.OrleansContrib.ActivationShedding</PackageId>
-        <PackageVersion>0.5-beta</PackageVersion>
+        <PackageVersion>0.5.1-beta</PackageVersion>
         <Title>Microsoft Orleans Grain Shedding Extension</Title>
         <Authors>Oisin Grehan</Authors>
         <Description>Allows rebalancing of grain activations across a cluster. Useful during rolling upgrades where placement can be very unbalanced at the end of the deployment.</Description>
@@ -14,13 +14,20 @@
         <PackageProjectUrl>https://github.com/oising/OrleansContrib.ActivationShedding</PackageProjectUrl>
         <RepositoryUrl>https://github.com/oising/OrleansContrib.ActivationShedding</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <AssemblyVersion>1.0.0</AssemblyVersion>
-        <FileVersion>1.0.0</FileVersion>
+<!--        <AssemblyVersion>1.0.0</AssemblyVersion>-->
+<!--        <FileVersion>1.0.0</FileVersion>-->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSource>true</IncludeSource>
+        <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PackageLicenseUrl>https://raw.githubusercontent.com/oising/OrleansContrib.ActivationShedding/main/LICENSE.txt</PackageLicenseUrl>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     </PropertyGroup>
 
+    <ItemGroup>
+        <None Include="LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
+        <None Include=".github\workflows\build.yml" />
+    </ItemGroup>
+    
     <PropertyGroup>
         <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
@@ -28,20 +35,16 @@
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Orleans.Analyzers" Version="3.5.1">
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="3.1.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Orleans.OrleansRuntime" Version="3.5.1" />
+        <PackageReference Include="Microsoft.Orleans.Core" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Orleans.OrleansRuntime" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Orleans.Runtime.Abstractions" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="3.1.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Content Include=".github\workflows\build.yml" />
-    </ItemGroup>
-
 </Project>

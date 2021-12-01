@@ -1,6 +1,6 @@
 # Orleans Grain Activation Shedding
 
-2021-11-24 / Version: 0.5-beta
+2021-11-24 / Version: 0.5.1-beta
 
 |CI Build|SonarCloud|
 |---|---|
@@ -13,11 +13,10 @@ The reason this happens is because once a grain is "activated," it is not eligib
 ### Requirements
 
 - netcore 3.1 or net 5.0 (same as Orleans 3.x targeting)
+- orleans 3.1 or later
 - serilog 3.x+ to allow destructuring of objects into structured metrics to a logging provider 
 
-This project uses Orleans 3.5.1 libraries
-
-This project is configured for NuGet package generation, but I'm holding off on publishing until I get some more feedback from testers.
+SourceLink is enabled, but I've not had a chance to test it.
 
 ### How this feature works
 
