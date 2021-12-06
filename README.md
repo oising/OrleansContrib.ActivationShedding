@@ -2,6 +2,8 @@
 
 2021-11-24 / Version: 0.5.1-beta
 
+https://www.nuget.org/packages/Nivot.OrleansContrib.ActivationShedding/0.5.1-beta
+
 |CI Build|SonarCloud|
 |---|---|
 |[![Build](https://github.com/oising/OrleansContrib.ActivationShedding/actions/workflows/build.yml/badge.svg)](https://github.com/oising/OrleansContrib.ActivationShedding/actions/workflows/build.yml)|[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=oising_OrleansContrib.ActivationShedding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=oising_OrleansContrib.ActivationShedding)|
