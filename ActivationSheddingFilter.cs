@@ -216,12 +216,6 @@ namespace OrleansContrib.ActivationShedding
                                     // this may be less than zero due to timing (We don't lock in invoke, perf)
                                     Interlocked.Exchange(ref _surplusActivations, 0);
                                     _isRebalancing = false;
-            
-                                    EmitRebalancingEvent(totalActivations,
-                                        myActivations,
-                                        overagePercent,
-                                        overagePercentTrigger,
-                                        StopEvent);
                                 }
                             }
                         }
