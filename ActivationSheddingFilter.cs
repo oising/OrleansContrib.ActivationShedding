@@ -199,18 +199,14 @@ namespace OrleansContrib.ActivationShedding
                                 {
                                     _isRebalancing = true;
                                     
-                                    UpdateCullingData();
-                                    
                                     EmitRebalancingEvent(totalActivations,
                                         myActivations,
                                         overagePercent,
                                         overagePercentTrigger,
                                         StartEvent);
                                 }
-                                else
-                                {
-                                    UpdateCullingData();
-                                }
+
+                                UpdateCullingData();
                             }
                             else
                             {
