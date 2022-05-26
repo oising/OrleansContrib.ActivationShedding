@@ -10,7 +10,7 @@ https://www.nuget.org/packages/Nivot.OrleansContrib.ActivationShedding/0.5.1-bet
 
 The purpose of this library is to help in scenarios where the number of silos in your cluster changes at runtime, either through dynamic scaling for load (e.g. K8S, Azure VMSS or other cloud equivalents) or during a rolling upgrade whereby silos are brought up and down one at a time to deploy new builds, or whatever your strategy might be. This can lead to a situation where the activations on your cluster may be distributed unevenly, causing one or more silos to be overloaded while others lay mostly unused. This situation is particularly prevalent when using Orleans Virtual Streams, as selectively controlling the ingress of requests during an upgrade is useless here as the Virtual Stream infrastructure is a "pull" model, so the moment a silo comes up, it will start activating grains. 
 
-The reason this happens is because once a grain is "activated," it is not eligible to be moved to another silo until it is "deactivated" (unloaded.) Grain deactivation is typically non-deterministic and is governed by multiple factors. Grains _can_ be deactivated explicitly through code, and this library takes advantage of that to move grains from one silo to another according to a set of configurable parameters. 
+The core reason why this distribution imblanace happens is because once a grain is "activated," it is not eligible to be moved to another silo until it is "deactivated" (unloaded.) Grain deactivation is typically non-deterministic and is governed by multiple factors. Grains _can_ be deactivated explicitly through code, and this library takes advantage of that to move grains from one silo to another according to a set of configurable parameters. 
 
 ### Requirements
 
@@ -38,7 +38,7 @@ public class ActivationSheddingOptions
     public int TotalGrainActivationsMinimumThreshold { get; set; } = 5000;
 
     /// <summary>
-    /// This is the baseline percentage overage for triggering rebalancing two silos.
+    /// This is the baseline percentage overage for triggering rebalancing two or more silos.
     /// This number is scaled down as the number of silos increases, to a minimum value of 2 (%).
     /// <remarks>The default is 20%</remarks>
     /// </summary>
