@@ -56,14 +56,13 @@ namespace OrleansContrib.ActivationShedding
         public async Task Invoke(IIncomingGrainCallContext context)
         {
             if (_surplusActivations > 0 &&
-                (!(context.Grain is SystemTarget)) &&
-                context.Grain is Grain grain &&
+                context.Grain is not SystemTarget &&
+                context.Grain is IGrainBase grain &&
                 _eligibilityCheck.ShouldBeMigrated(grain))
             {
                 _ = Interlocked.Decrement(ref _surplusActivations);
 
                 // allow allow placement strategy to relocate grain
-                //_runtime.DeactivateOnIdle(grain);
                 grain.MigrateOnIdle();
             }
 
