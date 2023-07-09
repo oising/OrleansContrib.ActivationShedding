@@ -14,9 +14,8 @@ namespace OrleansContrib.ActivationShedding
     [UsedImplicitly]
     public sealed class ActivationSheddingFilter : IIncomingGrainCallFilter, IDisposable
     {
-        private readonly IGrainRuntime _runtime;
         private readonly IClusterMembershipService _clusterMembershipService;
-        private readonly IGrainDeactivationEligibilityCheck _eligibilityCheck;
+        private readonly IGrainMigrationEligibilityCheck _eligibilityCheck;
         private readonly ILogger<ActivationSheddingFilter> _logger;
         private readonly CancellationTokenSource _cts;
         private readonly IManagementGrain _managementGrain;
@@ -26,11 +25,11 @@ namespace OrleansContrib.ActivationShedding
         private int _surplusActivations;
         private bool _isRebalancing;
 
-        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _lock = new(1, 1);
 
-        private static readonly EventId StartEvent = new EventId(58001, "Starting");
-        private static readonly EventId SheddingEvent = new EventId(58002, "Shedding");
-        private static readonly EventId StopEvent = new EventId(58003, "Stopping");
+        private static readonly EventId StartEvent = new(58001, "Starting");
+        private static readonly EventId SheddingEvent = new(58002, "Shedding");
+        private static readonly EventId StopEvent = new(58003, "Stopping");
         
         public ActivationSheddingFilter(
             ILogger<ActivationSheddingFilter> logger,
@@ -39,11 +38,10 @@ namespace OrleansContrib.ActivationShedding
             IGrainRuntime runtime,
             ILocalSiloDetails localSiloDetails,
             IClusterMembershipService clusterMembershipService,
-            IGrainDeactivationEligibilityCheck eligibilityCheck)
+            IGrainMigrationEligibilityCheck eligibilityCheck)
         {
             _logger = logger;
             _options = digitalTwinOptions.Value;
-            _runtime = runtime;
             _clusterMembershipService = clusterMembershipService;
             _eligibilityCheck = eligibilityCheck;
             _currentSilo = localSiloDetails.SiloAddress;
@@ -58,14 +56,14 @@ namespace OrleansContrib.ActivationShedding
         public async Task Invoke(IIncomingGrainCallContext context)
         {
             if (_surplusActivations > 0 &&
-                (!(context.Grain is SystemTarget)) &&
-                context.Grain is Grain grain &&
-                _eligibilityCheck.CanDeactivate(grain))
+                context.Grain is not SystemTarget &&
+                context.Grain is IGrainBase grain &&
+                _eligibilityCheck.ShouldBeMigrated(grain))
             {
                 _ = Interlocked.Decrement(ref _surplusActivations);
 
                 // allow allow placement strategy to relocate grain
-                _runtime.DeactivateOnIdle(grain);
+                grain.MigrateOnIdle();
             }
 
             await context.Invoke();
@@ -122,7 +120,7 @@ namespace OrleansContrib.ActivationShedding
             try
             {
                 // only work with two or more silos
-                if (_activeSilos?.Count > 1 )
+                if (_activeSilos.Count > 1 )
                 {
                     var activeSilos = _activeSilos.ToArray();
                     var stats = await _managementGrain.GetRuntimeStatistics(activeSilos);
@@ -254,8 +252,8 @@ namespace OrleansContrib.ActivationShedding
         {
             var customDimensions = new Dictionary<string, string>()
             {
-                { "orleans.silo.rebalancingPhase", phase.Name}, // started -> shedding -> stopped
-                { "orleans.silo", $"{_currentSilo.ToLongString()}" },
+                { "orleans.silo.rebalancingPhase", phase.Name ?? "<unnamed>"}, // started -> shedding -> stopped
+                { "orleans.silo", $"{_currentSilo.ToString()}" },
                 { "orleans.cluster.siloCount", _activeSilos.Count.ToString() },
                 { "orleans.cluster.totalActivations", totalActivations.ToString() },
                 { "orleans.silo.activations", myActivations.ToString() },
